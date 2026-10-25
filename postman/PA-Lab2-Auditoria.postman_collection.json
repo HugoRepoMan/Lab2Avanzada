@@ -1,0 +1,638 @@
+{
+  "info": {
+    "_postman_id": "b7e2d1a0-5c4b-4a8e-9b2d-1f3e5a7c9d0e",
+    "name": "PA-Lab2-Auditoria",
+    "description": "Colección de pruebas para el Sistema de Auditoría y Telemetría de Endpoints (Entidad Agente - /api/agentes). Laboratorio 1.2 de Programación Avanzada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "agenteId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01-Casos exitosos",
+      "item": [
+        {
+          "name": "E1. Crear agente (201 Created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Header Location está presente', function () {",
+                  "    pm.response.to.have.header('Location');",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Respuesta contiene id y datos del agente creado', function () {",
+                  "    pm.expect(json.id).to.be.a('number');",
+                  "    pm.expect(json.codigo).to.eql('AGT-SRV-001');",
+                  "    pm.expect(json.nombre).to.eql('SRV-PROD-01');",
+                  "    pm.expect(json.estado).to.eql('EN_MANTENIMIENTO');",
+                  "    pm.expect(json.activo).to.be.true;",
+                  "    pm.expect(json.creadoEn).to.not.be.null;",
+                  "});",
+                  "pm.environment.set('agenteId', json.id);",
+                  "pm.collectionVariables.set('agenteId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"AGT-SRV-001\",\n  \"nombre\": \"SRV-PROD-01\",\n  \"consumoMemoriaMb\": 512.75,\n  \"estado\": \"EN_MANTENIMIENTO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E2. Obtener agente por ID (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const expectedId = Number(pm.environment.get('agenteId') || pm.collectionVariables.get('agenteId'));",
+                  "pm.test('El ID devuelto coincide con agenteId', function () {",
+                  "    pm.expect(json.id).to.eql(expectedId);",
+                  "    pm.expect(json.codigo).to.eql('AGT-SRV-001');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/{{agenteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "{{agenteId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E3. Listar agentes paginados (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura de página VIA_DTO válida (content y page)', function () {",
+                  "    pm.expect(json.content).to.be.an('array');",
+                  "    pm.expect(json.page).to.be.an('object');",
+                  "    pm.expect(json.page.size).to.eql(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes?page=0&size=5&sort=nombre,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre,asc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E4. Buscar agentes por nombre (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Búsqueda devuelve coincidencias con SRV', function () {",
+                  "    pm.expect(json.content).to.be.an('array');",
+                  "    pm.expect(json.content.length).to.be.above(0);",
+                  "    pm.expect(json.content[0].nombre.toUpperCase()).to.include('SRV');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/buscar?nombre=SRV",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "SRV"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E5. Actualizar agente (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Datos actualizados y actualizadoEn no es nulo', function () {",
+                  "    pm.expect(json.nombre).to.eql('SRV-PROD-01-UPD');",
+                  "    pm.expect(json.consumoMemoriaMb).to.eql(1024.50);",
+                  "    pm.expect(json.estado).to.eql('DESCONECTADO');",
+                  "    pm.expect(json.actualizadoEn).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"AGT-SRV-001\",\n  \"nombre\": \"SRV-PROD-01-UPD\",\n  \"consumoMemoriaMb\": 1024.50,\n  \"estado\": \"DESCONECTADO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/{{agenteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "{{agenteId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "E6. Eliminar agente (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/{{agenteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "{{agenteId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02-Casos negativos",
+      "item": [
+        {
+          "name": "N1. POST con codigo vacío y consumoMemoriaMb en 0 (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse con lista errors', function () {",
+                  "    pm.expect(json.status).to.eql(400);",
+                  "    pm.expect(json.message).to.eql('La solicitud contiene datos inválidos');",
+                  "    pm.expect(json.path).to.eql('/api/agentes');",
+                  "    pm.expect(json.errors).to.be.an('array');",
+                  "    pm.expect(json.errors.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"\",\n  \"nombre\": \"SRV-ERR-01\",\n  \"consumoMemoriaMb\": 0,\n  \"estado\": \"ACTIVO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N2. POST con valor de enum inexistente (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse para formato incorrecto', function () {",
+                  "    pm.expect(json.status).to.eql(400);",
+                  "    pm.expect(json.message).to.eql('Formato de la solicitud o del parámetro incorrecto');",
+                  "    pm.expect(json.path).to.eql('/api/agentes');",
+                  "    pm.expect(json.errors).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"AGT-ENUM-ERR\",\n  \"nombre\": \"SRV-ENUM-01\",\n  \"consumoMemoriaMb\": 256.00,\n  \"estado\": \"ESTADO_INVALIDO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N3. GET con id no numérico (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse por tipo de parámetro inválido', function () {",
+                  "    pm.expect(json.status).to.eql(400);",
+                  "    pm.expect(json.message).to.eql('Formato de la solicitud o del parámetro incorrecto');",
+                  "    pm.expect(json.path).to.eql('/api/agentes/abc');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "abc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N4. GET con id inexistente (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse 404 Not Found', function () {",
+                  "    pm.expect(json.status).to.eql(404);",
+                  "    pm.expect(json.message).to.include('99999');",
+                  "    pm.expect(json.path).to.eql('/api/agentes/99999');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "99999"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N5. POST repitiendo el mismo codigo de E1 (409 Conflict)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const baseUrl = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:8080';",
+                  "pm.sendRequest({",
+                  "    url: baseUrl + '/api/agentes',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: {",
+                  "        mode: 'raw',",
+                  "        raw: JSON.stringify({",
+                  "            codigo: 'AGT-SRV-001',",
+                  "            nombre: 'SRV-PROD-01',",
+                  "            consumoMemoriaMb: 512.75,",
+                  "            estado: 'DESCONECTADO',",
+                  "            fechaRegistro: '2026-10-20',",
+                  "            activo: true",
+                  "        })",
+                  "    }",
+                  "}, function (err, res) {",
+                  "    if (res && res.code === 201) {",
+                  "        pm.environment.set('agenteId', res.json().id);",
+                  "        pm.collectionVariables.set('agenteId', res.json().id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse 409 Conflict por código duplicado', function () {",
+                  "    pm.expect(json.status).to.eql(409);",
+                  "    pm.expect(json.message).to.include('AGT-SRV-001');",
+                  "    pm.expect(json.path).to.eql('/api/agentes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"AGT-SRV-001\",\n  \"nombre\": \"SRV-DUPLICADO\",\n  \"consumoMemoriaMb\": 256.00,\n  \"estado\": \"DESCONECTADO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N6. POST con activo false y estado ACTIVO (422 Unprocessable Entity)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse 422 por regla de negocio', function () {",
+                  "    pm.expect(json.status).to.eql(422);",
+                  "    pm.expect(json.message).to.include('inactivo');",
+                  "    pm.expect(json.path).to.eql('/api/agentes');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"AGT-REGLA-422\",\n  \"nombre\": \"SRV-INACTIVO-01\",\n  \"consumoMemoriaMb\": 128.50,\n  \"estado\": \"ACTIVO\",\n  \"fechaRegistro\": \"2026-10-20\",\n  \"activo\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "N7. PATCH método no permitido (405 Method Not Allowed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 405 Method Not Allowed', function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('Estructura ErrorResponse 405 Method Not Allowed', function () {",
+                  "    pm.expect(json.status).to.eql(405);",
+                  "    pm.expect(json.error).to.eql('Method Not Allowed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"SUSPENDIDO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/agentes/{{agenteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "agentes",
+                "{{agenteId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
